@@ -1,21 +1,24 @@
 
 const BASE_URL = 'https://dummyjson.com'
 
-export async function getJSON(url) {
-    const response = await fetch(url)
+export async function getJSON(url, options = {}) {
+    const response = await fetch(url, options)
 
     if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`)
+        throw new Error(`Request failed: ${response.status} ${response.statusText}`)
     }
 
     return response.json()
 }
 
-export const getProducts = () =>
-    getJSON(`${BASE_URL}/products?limit=100`)
+export async function getProducts() {
+    return getJSON(`${BASE_URL}/products?limit=0`)
+}
 
-export const getProduct = (id) =>
-    getJSON(`${BASE_URL}/products/${id}`)
+export async function getCategories() {
+    return getJSON(`${BASE_URL}/products/categories`)
+}
 
-export const getCategories = () =>
-    getJSON(`${BASE_URL}/products/categories`)
+export async function getProduct(id) {
+    return getJSON(`${BASE_URL}/products/${encodeURIComponent(id)}`)
+}
