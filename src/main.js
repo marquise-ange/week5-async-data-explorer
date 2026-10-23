@@ -13,7 +13,7 @@ const state = {
 
 const app = document.querySelector('#app')
 
-// Create one product card safely using DOM elements.
+// Create a product card using safe DOM methods.
 function createProductCard({
   id,
   title,
@@ -33,8 +33,6 @@ function createProductCard({
 
   if (thumbnail) {
     image.src = thumbnail
-  } else {
-    image.alt = `${title ?? 'Product'} image unavailable`
   }
 
   const content = document.createElement('div')
@@ -67,7 +65,7 @@ function createProductCard({
   return card
 }
 
-// Display the current application state.
+// Render the application based on the current state.
 function render() {
   app.replaceChildren()
 
@@ -137,17 +135,21 @@ function render() {
   intro.className = 'mt-2 text-gray-600'
   intro.textContent = 'Explore our product collection.'
 
-  // Search input
+  // Search label
   const searchLabel = document.createElement('label')
   searchLabel.htmlFor = 'product-search'
   searchLabel.className = 'mt-5 block font-medium text-gray-700'
   searchLabel.textContent = 'Search products'
 
+  // Search input
   const searchInput = document.createElement('input')
   searchInput.type = 'search'
   searchInput.id = 'product-search'
   searchInput.placeholder = 'Search by product name or description...'
-  searchInput.setAttribute('aria-label', 'Search by product name or description')
+  searchInput.setAttribute(
+    'aria-label',
+    'Search by product name or description'
+  )
   searchInput.value = state.query
   searchInput.className =
     'mt-2 w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-200'
@@ -157,21 +159,75 @@ function render() {
     render()
   })
 
-  // Search products by title or description.
+  // Category label
+  const categoryLabel = document.createElement('label')
+  categoryLabel.htmlFor = 'category-filter'
+  categoryLabel.className = 'mt-5 block font-medium text-gray-700'
+  categoryLabel.textContent = 'Filter by category'
+
+  // Category dropdown
+  const categorySelect = document.createElement('select')
+  categorySelect.id = 'category-filter'
+  categorySelect.setAttribute(
+    'aria-label',
+    'Filter products by category'
+  )
+  categorySelect.className =
+    'mt-2 block w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3'
+
+  const allOption = document.createElement('option')
+  allOption.value = 'all'
+  allOption.textContent = 'All categories'
+  categorySelect.append(allOption)
+
+  // Build unique categories from the fetched products.
+  const categories = [
+    ...new Set(
+      state.items
+        .map((product) => product.category)
+        .filter(Boolean)
+    ),
+  ].sort()
+
+  categories.forEach((category) => {
+    const option = document.createElement('option')
+    option.value = category
+    option.textContent = category
+    categorySelect.append(option)
+  })
+
+  // Keep the selected category after rendering.
+  const categoryExists = categories.includes(state.filter)
+  categorySelect.value = categoryExists ? state.filter : 'all'
+
+  categorySelect.addEventListener('change', (event) => {
+    state.filter = event.target.value
+    render()
+  })
+
+  // Apply search and category filtering together.
   const query = state.query.trim().toLowerCase()
 
   const visibleItems = state.items.filter((product) => {
     const title = (product.title ?? '').toLowerCase()
     const description = (product.description ?? '').toLowerCase()
 
-    return title.includes(query) || description.includes(query)
+    const matchesSearch =
+      title.includes(query) || description.includes(query)
+
+    const matchesCategory =
+      state.filter === 'all' || product.category === state.filter
+
+    return matchesSearch && matchesCategory
   })
 
+  // Results count
   const status = document.createElement('p')
   status.className = 'mt-4 text-sm text-gray-600'
   status.setAttribute('role', 'status')
   status.setAttribute('aria-live', 'polite')
-  status.textContent = `Showing ${visibleItems.length} of ${state.items.length} products`
+  status.textContent =
+    `Showing ${visibleItems.length} of ${state.items.length} products`
 
   // Product grid
   const grid = document.createElement('section')
@@ -184,9 +240,15 @@ function render() {
     const emptyMessage = document.createElement('p')
     emptyMessage.className =
       'col-span-full rounded-xl bg-white p-6 text-gray-600 shadow-sm'
-    emptyMessage.textContent = state.query.trim()
-      ? 'No products found. Try another search.'
-      : 'No products are available right now.'
+
+    emptyMessage.textContent =
+      state.query.trim() && state.filter !== 'all'
+        ? 'No products match your search and selected category.'
+        : state.query.trim()
+          ? 'No products found. Try another search.'
+          : state.filter !== 'all'
+            ? 'No products found in this category.'
+            : 'No products are available right now.'
 
     grid.append(emptyMessage)
   } else {
@@ -211,7 +273,17 @@ function render() {
     grid.append(...cards)
   }
 
-  page.append(heading, intro, searchLabel, searchInput, status, grid)
+  page.append(
+    heading,
+    intro,
+    searchLabel,
+    searchInput,
+    categoryLabel,
+    categorySelect,
+    status,
+    grid
+  )
+
   app.append(page)
 }
 
