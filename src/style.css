@@ -3,7 +3,26 @@
 body {
   margin: 0;
   min-width: 320px;
+  min-height: 100vh;
   background: #f7f6ef;
   color: #24382e;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #9cbea4;
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #244b3b;
+  color: white;
 }

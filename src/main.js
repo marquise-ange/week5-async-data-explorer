@@ -13,7 +13,191 @@ const state = {
 
 const app = document.querySelector('#app')
 
-// Create a product card using safe DOM methods.
+const colors = {
+  forest: 'text-[#244B3B]',
+  muted: 'text-[#718078]',
+  field:
+    'w-full rounded-xl border border-[#dfe4da] bg-white px-4 py-3 text-sm text-[#24382E] transition focus:border-[#789B80] focus:outline-none focus:ring-2 focus:ring-[#DCE9D8]',
+  button:
+    'rounded-xl bg-[#244B3B] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#183629] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#789B80]',
+}
+
+function createElement(tag, className = '', text = '') {
+  const element = document.createElement(tag)
+  element.className = className
+
+  if (text !== '') {
+    element.textContent = text
+  }
+
+  return element
+}
+
+function createBrand() {
+  const brand = createElement(
+    'div',
+    'flex items-center gap-3'
+  )
+
+  const mark = createElement(
+    'div',
+    'grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#244B3B] text-xl text-white',
+    '✳'
+  )
+
+  const words = createElement('div')
+  const name = createElement(
+    'p',
+    'font-extrabold tracking-tight text-[#244B3B]',
+    'Product Explorer'
+  )
+  const tagline = createElement(
+    'p',
+    'mt-0.5 text-xs text-[#718078]',
+    'Discover something great'
+  )
+
+  words.append(name, tagline)
+  brand.append(mark, words)
+
+  return brand
+}
+
+function createHeader() {
+  const header = createElement(
+    'header',
+    'flex items-center justify-between gap-4 border-b border-[#e6e9e1] py-5'
+  )
+
+  const brand = createBrand()
+
+  const label = createElement(
+    'span',
+    'hidden rounded-full border border-[#dce9d8] bg-white px-4 py-2 text-xs font-semibold text-[#244B3B] sm:inline-block',
+    'YOUR PRODUCT GUIDE'
+  )
+
+  header.append(brand, label)
+  return header
+}
+
+function createHero() {
+  const hero = createElement(
+    'section',
+    'relative mt-8 overflow-hidden rounded-[28px] border border-[#e0e8db] bg-gradient-to-br from-[#e8eee2] to-[#f1efe3] p-7 sm:p-10 lg:p-14'
+  )
+
+  const content = createElement(
+    'div',
+    'relative z-10 max-w-2xl'
+  )
+
+  const eyebrow = createElement(
+    'p',
+    'mb-4 text-xs font-extrabold uppercase tracking-[0.18em] text-[#446B51]',
+    '✦  YOUR NEXT DISCOVERY STARTS HERE'
+  )
+
+  const heading = createElement(
+    'h1',
+    'max-w-xl text-4xl font-extrabold leading-tight tracking-[-0.055em] text-[#183629] sm:text-5xl lg:text-6xl',
+    'Find your next favorite.'
+  )
+
+  const description = createElement(
+    'p',
+    'mt-5 max-w-lg text-sm leading-7 text-[#617166] sm:text-base',
+    'Explore our collection, compare prices, and discover products that catch your eye.'
+  )
+
+  content.append(eyebrow, heading, description)
+
+  const decoration = createElement(
+    'div',
+    'pointer-events-none absolute -bottom-24 -right-12 h-64 w-64 rounded-full border-[35px] border-[#244B3B]/[0.06] sm:h-80 sm:w-80'
+  )
+
+  hero.append(content, decoration)
+  return hero
+}
+
+function createStatCard(label, value, note) {
+  const card = createElement(
+    'article',
+    'rounded-2xl border border-[#e6e9e1] bg-white p-5 shadow-sm transition hover:shadow-md sm:p-6'
+  )
+
+  const title = createElement(
+    'p',
+    'text-sm font-medium text-[#718078]',
+    label
+  )
+
+  const number = createElement(
+    'p',
+    'mt-3 break-words text-2xl font-extrabold tracking-tight text-[#244B3B] sm:text-3xl',
+    value
+  )
+
+  const description = createElement(
+    'p',
+    'mt-2 text-xs text-[#8a968e]',
+    note
+  )
+
+  card.append(title, number, description)
+  return card
+}
+
+function createStats() {
+  const stats = createElement(
+    'section',
+    'mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4'
+  )
+
+  const total = state.items.length
+
+  const priceTotal = state.items.reduce(
+    (sum, product) =>
+      sum + (
+        typeof product.price === 'number'
+          ? product.price
+          : 0
+      ),
+    0
+  )
+
+  const averagePrice = total > 0
+    ? priceTotal / total
+    : 0
+
+  const categories = new Set(
+    state.items
+      .map((product) => product.category)
+      .filter(Boolean)
+  )
+
+  stats.append(
+    createStatCard(
+      'Total products',
+      total.toLocaleString(),
+      'Products loaded from the API'
+    ),
+    createStatCard(
+      'Average price',
+      `$${averagePrice.toFixed(2)}`,
+      'Average listed product price'
+    ),
+    createStatCard(
+      'Categories',
+      categories.size.toLocaleString(),
+      'Unique product categories'
+    )
+  )
+
+  return stats
+}
+
 function createProductCard({
   id,
   title,
@@ -21,173 +205,375 @@ function createProductCard({
   category,
   thumbnail,
   description,
+  rating,
 }) {
-  const card = document.createElement('article')
-  card.className =
-    'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200'
+  const card = createElement(
+    'article',
+    'group flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#e9ebe5] bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[#d4dfd1] hover:shadow-xl'
+  )
 
-  const image = document.createElement('img')
+  const imageWrap = createElement(
+    'div',
+    'flex h-52 items-center justify-center overflow-hidden bg-[#f4f5ef] p-5'
+  )
+
+  const image = createElement(
+    'img',
+    'h-full w-full object-contain transition duration-300 group-hover:scale-105'
+  )
+
   image.alt = title ?? 'Product image'
   image.loading = 'lazy'
-  image.className = 'h-48 w-full bg-gray-100 object-contain p-4'
+  image.decoding = 'async'
 
   if (thumbnail) {
     image.src = thumbnail
   }
 
-  const content = document.createElement('div')
-  content.className = 'p-4'
+  image.addEventListener('error', () => {
+    image.hidden = true
+    imageWrap.setAttribute(
+      'aria-label',
+      'Product image unavailable'
+    )
+  }, { once: true })
 
-  const categoryText = document.createElement('p')
-  categoryText.className = 'text-sm capitalize text-green-700'
-  categoryText.textContent = category ?? 'Uncategorized'
+  imageWrap.append(image)
 
-  const name = document.createElement('h2')
-  name.className = 'mt-2 text-lg font-semibold text-gray-900'
-  name.textContent = title ?? 'Untitled product'
+  const content = createElement(
+    'div',
+    'flex flex-1 flex-col items-start p-4 sm:p-5'
+  )
 
-  const details = document.createElement('p')
-  details.className = 'mt-2 line-clamp-2 text-sm text-gray-600'
-  details.textContent = description ?? 'No description available.'
+  const categoryText = createElement(
+    'span',
+    'inline-block max-w-full truncate rounded-full bg-[#e8eee2] px-3 py-1.5 text-xs font-bold capitalize text-[#244B3B]',
+    category ?? 'Uncategorized'
+  )
 
-  const priceText = document.createElement('p')
-  priceText.className = 'mt-4 text-xl font-bold text-gray-900'
-  priceText.textContent =
-    typeof price === 'number' ? `$${price.toFixed(2)}` : 'Price unavailable'
+  const name = createElement(
+    'h2',
+    'mt-4 line-clamp-2 min-h-12 text-base font-bold leading-6 text-[#24382E]',
+    title ?? 'Untitled product'
+  )
 
-  const idText = document.createElement('p')
-  idText.className = 'mt-2 text-xs text-gray-500'
-  idText.textContent = `Product ID: ${id}`
+  const details = createElement(
+    'p',
+    'mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-[#718078]',
+    description ?? 'No description available.'
+  )
 
-  content.append(categoryText, name, details, priceText, idText)
-  card.append(image, content)
+  const meta = createElement(
+    'div',
+    'mt-5 flex w-full items-center justify-between gap-2'
+  )
+
+  const priceText = createElement(
+    'p',
+    'text-xl font-extrabold tracking-tight text-[#244B3B]',
+    typeof price === 'number'
+      ? `$${price.toFixed(2)}`
+      : 'Price unavailable'
+  )
+
+  meta.append(priceText)
+
+  if (typeof rating?.rate === 'number') {
+    const ratingText = createElement(
+      'span',
+      'shrink-0 text-sm font-semibold text-[#8a6925]',
+      `★ ${rating.rate.toFixed(1)}`
+    )
+
+    meta.append(ratingText)
+  }
+
+  const idText = createElement(
+    'p',
+    'mt-3 text-xs text-[#8a968e]',
+    `Product ID: ${id}`
+  )
+
+  content.append(
+    categoryText,
+    name,
+    details,
+    meta,
+    idText
+  )
+
+  card.append(imageWrap, content)
 
   return card
 }
 
-// Render the interface from the current state.
+function createStatePanel(title, message, icon = '✦') {
+  const panel = createElement(
+    'div',
+    'col-span-full rounded-[22px] border border-dashed border-[#d5ded2] bg-white/80 px-6 py-12 text-center'
+  )
+
+  const symbol = createElement(
+    'div',
+    'mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#e8eee2] text-2xl text-[#244B3B]',
+    icon
+  )
+
+  const heading = createElement(
+    'h3',
+    'text-lg font-bold text-[#183629]',
+    title
+  )
+
+  const description = createElement(
+    'p',
+    'mx-auto mt-2 max-w-md text-sm leading-6 text-[#718078]',
+    message
+  )
+
+  panel.append(symbol, heading, description)
+  return panel
+}
+
+function createLoadingPage() {
+  const page = createElement(
+    'main',
+    'mx-auto min-h-screen w-full max-w-[1180px] px-4 pb-16 sm:px-6 lg:px-8'
+  )
+
+  page.append(createHeader(), createHero())
+
+  const loadingMessage = createElement(
+    'p',
+    'mt-8 text-sm text-[#718078]',
+    'Loading your product collection...'
+  )
+
+  loadingMessage.setAttribute('role', 'status')
+  loadingMessage.setAttribute('aria-live', 'polite')
+
+  const skeletonGrid = createElement(
+    'div',
+    'mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+  )
+
+  for (let i = 0; i < 8; i += 1) {
+    const skeleton = createElement(
+      'div',
+      'animate-pulse overflow-hidden rounded-[22px] border border-[#e6e9e1] bg-white'
+    )
+
+    const skeletonImage = createElement(
+      'div',
+      'h-52 bg-[#e8eae3]'
+    )
+
+    const skeletonContent = createElement(
+      'div',
+      'space-y-3 p-5'
+    )
+
+    skeletonContent.append(
+      createElement(
+        'div',
+        'h-4 w-1/3 rounded-lg bg-[#e8eae3]'
+      ),
+      createElement(
+        'div',
+        'h-5 w-4/5 rounded-lg bg-[#e8eae3]'
+      ),
+      createElement(
+        'div',
+        'h-4 w-full rounded-lg bg-[#e8eae3]'
+      ),
+      createElement(
+        'div',
+        'h-8 w-1/2 rounded-lg bg-[#e8eae3]'
+      )
+    )
+
+    skeleton.append(skeletonImage, skeletonContent)
+    skeletonGrid.append(skeleton)
+  }
+
+  page.append(loadingMessage, skeletonGrid)
+  return page
+}
+
+function createErrorPage() {
+  const page = createElement(
+    'main',
+    'mx-auto min-h-screen w-full max-w-[1180px] px-4 pb-16 sm:px-6 lg:px-8'
+  )
+
+  page.append(createHeader(), createHero())
+
+  const panel = createElement(
+    'section',
+    'mt-8 max-w-xl rounded-[22px] border border-[#e6e9e1] bg-white p-7 shadow-sm'
+  )
+
+  const heading = createElement(
+    'h2',
+    'text-xl font-bold text-[#183629]',
+    'Unable to load products'
+  )
+
+  const message = createElement(
+    'p',
+    'mt-3 text-sm leading-6 text-[#718078]',
+    state.error ?? 'Please check your connection and try again.'
+  )
+
+  message.setAttribute('role', 'alert')
+
+  const retry = createElement(
+    'button',
+    colors.button,
+    'Try again'
+  )
+
+  retry.type = 'button'
+  retry.addEventListener('click', loadProducts)
+
+  panel.append(heading, message, retry)
+  page.append(panel)
+
+  return page
+}
+
 function render() {
   app.replaceChildren()
 
-  // Loading state
   if (state.status === 'loading') {
-    const loadingPage = document.createElement('main')
-    loadingPage.className = 'min-h-screen bg-stone-100 p-8'
-
-    loadingPage.innerHTML = `
-      <h1 class="text-3xl font-bold text-green-700">Data Explorer</h1>
-      <p role="status" aria-live="polite" class="mt-4 text-gray-600">
-        Loading products, please wait...
-      </p>
-      <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        ${Array.from(
-      { length: 8 },
-      () =>
-        '<div class="h-64 animate-pulse rounded-2xl bg-gray-200"></div>'
-    ).join('')}
-      </div>
-    `
-
-    app.append(loadingPage)
+    app.append(createLoadingPage())
     return
   }
 
-  // Error state
   if (state.status === 'error') {
-    const errorPage = document.createElement('main')
-    errorPage.className = 'min-h-screen bg-stone-100 p-8'
-
-    errorPage.innerHTML = `
-      <h1 class="text-3xl font-bold text-green-700">Data Explorer</h1>
-      <section class="mt-8 max-w-lg rounded-xl bg-white p-6 shadow">
-        <h2 class="text-xl font-semibold text-red-600">
-          Unable to load products
-        </h2>
-        <p id="error-message" role="alert" class="mt-3 text-gray-600"></p>
-        <button id="retry-button" type="button"
-          class="mt-5 rounded-lg bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800">
-          Retry
-        </button>
-      </section>
-    `
-
-    errorPage.querySelector('#error-message').textContent =
-      state.error ?? 'Please check your connection and try again.'
-
-    errorPage.querySelector('#retry-button').addEventListener(
-      'click',
-      loadProducts
-    )
-
-    app.append(errorPage)
+    app.append(createErrorPage())
     return
   }
 
-  // Main page
-  const page = document.createElement('main')
-  page.className = 'min-h-screen bg-stone-100 p-6 sm:p-8'
+  const page = createElement(
+    'main',
+    'mx-auto min-h-screen w-full max-w-[1180px] px-4 pb-12 sm:px-6 lg:px-8'
+  )
 
-  const heading = document.createElement('h1')
-  heading.className = 'text-3xl font-bold text-green-700'
-  heading.textContent = 'Data Explorer'
+  page.append(
+    createHeader(),
+    createHero(),
+    createStats()
+  )
 
-  const intro = document.createElement('p')
-  intro.className = 'mt-2 text-gray-600'
-  intro.textContent = 'Explore our product collection.'
+  const catalogue = createElement(
+    'section',
+    'mt-12'
+  )
 
-  // Search label
-  const searchLabel = document.createElement('label')
+  const sectionHeading = createElement(
+    'h2',
+    'text-2xl font-extrabold tracking-tight text-[#183629] sm:text-3xl',
+    'Explore the collection'
+  )
+
+  const sectionDescription = createElement(
+    'p',
+    'mt-2 text-sm leading-6 text-[#718078]',
+    'Search, filter, and sort to find what you are looking for.'
+  )
+
+  catalogue.append(sectionHeading, sectionDescription)
+
+  // Search, category and sorting controls.
+  const toolbar = createElement(
+    'div',
+    'mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]'
+  )
+
+  const searchLabel = createElement(
+    'label',
+    'block text-sm font-semibold text-[#34483B]'
+  )
+
   searchLabel.htmlFor = 'product-search'
-  searchLabel.className = 'mt-5 block font-medium text-gray-700'
-  searchLabel.textContent = 'Search products'
+  searchLabel.append(
+    createElement('span', 'mb-2 block', 'Search products')
+  )
 
-  // Search input
-  const searchInput = document.createElement('input')
+  const searchInput = createElement(
+    'input',
+    colors.field
+  )
+
   searchInput.type = 'search'
   searchInput.id = 'product-search'
-  searchInput.placeholder = 'Search by product name or description...'
+  searchInput.placeholder = 'Search by name or description...'
+  searchInput.value = state.query
+  searchInput.autocomplete = 'off'
+
   searchInput.setAttribute(
     'aria-label',
     'Search by product name or description'
   )
-  searchInput.value = state.query
-  searchInput.className =
-    'mt-2 w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-200'
 
   searchInput.addEventListener('input', (event) => {
+    const cursorPosition = event.target.selectionStart
+
     state.query = event.target.value
     render()
+
+    const updatedSearch = document.querySelector(
+      '#product-search'
+    )
+
+    if (updatedSearch) {
+      updatedSearch.focus()
+
+      if (cursorPosition !== null) {
+        updatedSearch.setSelectionRange(
+          cursorPosition,
+          cursorPosition
+        )
+      }
+    }
   })
 
-  // Category label
-  const categoryLabel = document.createElement('label')
-  categoryLabel.htmlFor = 'category-filter'
-  categoryLabel.className = 'mt-5 block font-medium text-gray-700'
-  categoryLabel.textContent = 'Filter by category'
+  searchLabel.append(searchInput)
 
-  // Category dropdown
-  const categorySelect = document.createElement('select')
-  categorySelect.id = 'category-filter'
-  categorySelect.setAttribute(
-    'aria-label',
-    'Filter products by category'
-  )
-  categorySelect.className =
-    'mt-2 block w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3'
-
-  const allOption = document.createElement('option')
-  allOption.value = 'all'
-  allOption.textContent = 'All categories'
-  categorySelect.append(allOption)
-
-  // Create unique categories from the loaded API data.
   const categories = [
     ...new Set(
       state.items
         .map((product) => product.category)
         .filter(Boolean)
     ),
-  ].sort()
+  ].sort((a, b) => a.localeCompare(b))
+
+  const categoryLabel = createElement(
+    'label',
+    'block text-sm font-semibold text-[#34483B]'
+  )
+
+  categoryLabel.htmlFor = 'category-filter'
+  categoryLabel.append(
+    createElement('span', 'mb-2 block', 'Category')
+  )
+
+  const categorySelect = createElement(
+    'select',
+    colors.field
+  )
+
+  categorySelect.id = 'category-filter'
+  categorySelect.setAttribute(
+    'aria-label',
+    'Filter products by category'
+  )
+
+  const allOption = document.createElement('option')
+  allOption.value = 'all'
+  allOption.textContent = 'All categories'
+  categorySelect.append(allOption)
 
   categories.forEach((category) => {
     const option = document.createElement('option')
@@ -205,34 +591,25 @@ function render() {
     render()
   })
 
-  // Filter products using both search and category.
-  const query = state.query.trim().toLowerCase()
+  categoryLabel.append(categorySelect)
 
-  const visibleItems = state.items.filter((product) => {
-    const title = (product.title ?? '').toLowerCase()
-    const description = (product.description ?? '').toLowerCase()
+  const sortLabel = createElement(
+    'label',
+    'block text-sm font-semibold text-[#34483B]'
+  )
 
-    const matchesSearch =
-      title.includes(query) || description.includes(query)
-
-    const matchesCategory =
-      state.filter === 'all' || product.category === state.filter
-
-    return matchesSearch && matchesCategory
-  })
-
-  // Sorting label
-  const sortLabel = document.createElement('label')
   sortLabel.htmlFor = 'sort-products'
-  sortLabel.className = 'mt-5 block font-medium text-gray-700'
-  sortLabel.textContent = 'Sort products'
+  sortLabel.append(
+    createElement('span', 'mb-2 block', 'Sort by')
+  )
 
-  // Sorting dropdown
-  const sortSelect = document.createElement('select')
+  const sortSelect = createElement(
+    'select',
+    colors.field
+  )
+
   sortSelect.id = 'sort-products'
   sortSelect.setAttribute('aria-label', 'Sort products')
-  sortSelect.className =
-    'mt-2 block w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3'
 
   const sortOptions = [
     { value: 'default', label: 'Default order' },
@@ -255,6 +632,29 @@ function render() {
     render()
   })
 
+  sortLabel.append(sortSelect)
+  toolbar.append(searchLabel, categoryLabel, sortLabel)
+
+  // Filter using both the search query and category.
+  const query = state.query.trim().toLowerCase()
+
+  const visibleItems = state.items.filter((product) => {
+    const title = (product.title ?? '').toLowerCase()
+    const description = (
+      product.description ?? ''
+    ).toLowerCase()
+
+    const matchesSearch =
+      title.includes(query) ||
+      description.includes(query)
+
+    const matchesCategory =
+      state.filter === 'all' ||
+      product.category === state.filter
+
+    return matchesSearch && matchesCategory
+  })
+
   // Sort a copy of the filtered products.
   let sortedItems = visibleItems
 
@@ -268,84 +668,98 @@ function render() {
     )
   } else if (state.sort === 'name-asc') {
     sortedItems = visibleItems.toSorted(
-      (a, b) => a.title.localeCompare(b.title)
+      (a, b) => (a.title ?? '').localeCompare(
+        b.title ?? ''
+      )
     )
   }
 
-  // Results count
-  const status = document.createElement('p')
-  status.className = 'mt-4 text-sm text-gray-600'
-  status.setAttribute('role', 'status')
-  status.setAttribute('aria-live', 'polite')
-  status.textContent =
-    `Showing ${sortedItems.length} of ${state.items.length} products`
+  const resultsRow = createElement(
+    'div',
+    'mt-6 flex flex-wrap items-center justify-between gap-3'
+  )
 
-  // Product grid
-  const grid = document.createElement('section')
-  grid.className =
-    'mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+  const results = createElement(
+    'p',
+    'text-sm text-[#718078]'
+  )
+
+  results.setAttribute('role', 'status')
+  results.setAttribute('aria-live', 'polite')
+
+  const resultsStrong = createElement(
+    'span',
+    'font-bold text-[#244B3B]',
+    sortedItems.length.toLocaleString()
+  )
+
+  results.append(
+    resultsStrong,
+    document.createTextNode(
+      ` of ${state.items.length.toLocaleString()} products`
+    )
+  )
+
+  const activeFilters = createElement(
+    'span',
+    'rounded-full bg-[#e8eee2] px-3 py-1.5 text-xs font-semibold capitalize text-[#244B3B]',
+    state.filter === 'all'
+      ? 'All categories'
+      : state.filter
+  )
+
+  resultsRow.append(results, activeFilters)
+
+  const grid = createElement(
+    'div',
+    'mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+  )
+
   grid.setAttribute('aria-label', 'Product catalogue')
 
-  // Empty state or sorted product cards
   if (sortedItems.length === 0) {
-    const emptyMessage = document.createElement('p')
-    emptyMessage.className =
-      'col-span-full rounded-xl bg-white p-6 text-gray-600 shadow-sm'
+    let message = 'No products are available right now.'
 
     if (state.query.trim() && state.filter !== 'all') {
-      emptyMessage.textContent =
+      message =
         'No products match your search and selected category.'
     } else if (state.query.trim()) {
-      emptyMessage.textContent =
-        'No products found. Try another search.'
+      message = 'No products found. Try another search.'
     } else if (state.filter !== 'all') {
-      emptyMessage.textContent =
-        'No products found in this category.'
-    } else {
-      emptyMessage.textContent =
-        'No products are available right now.'
+      message = 'No products found in this category.'
     }
 
-    grid.append(emptyMessage)
+    grid.append(
+      createStatePanel(
+        'No products found',
+        message,
+        '⌕'
+      )
+    )
   } else {
-    const cards = sortedItems.map(({
-      id,
-      title,
-      price,
-      category,
-      thumbnail,
-      description,
-    }) =>
-      createProductCard({
-        id,
-        title,
-        price,
-        category,
-        thumbnail,
-        description,
-      })
+    const cards = sortedItems.map((product) =>
+      createProductCard(product)
     )
 
     grid.append(...cards)
   }
 
-  page.append(
-    heading,
-    intro,
-    searchLabel,
-    searchInput,
-    categoryLabel,
-    categorySelect,
-    sortLabel,
-    sortSelect,
-    status,
+  catalogue.append(
+    toolbar,
+    resultsRow,
     grid
   )
 
+  const footer = createElement(
+    'footer',
+    'mt-14 border-t border-[#e6e9e1] pt-6 text-center text-xs leading-6 text-[#718078]',
+    'Product Explorer · Built with JavaScript, Vite and Tailwind CSS.'
+  )
+
+  page.append(catalogue, footer)
   app.append(page)
 }
 
-// Fetch products from the API.
 async function loadProducts() {
   state.status = 'loading'
   state.error = null
@@ -358,11 +772,13 @@ async function loadProducts() {
     state.status = 'success'
   } catch (error) {
     state.status = 'error'
-    state.error = error.message
+    state.error =
+      error instanceof Error
+        ? error.message
+        : 'An unexpected error occurred.'
   }
 
   render()
 }
 
-// Start the application.
 loadProducts()
