@@ -1,6 +1,5 @@
 
 const BASE_URL = 'https://dummyjson.com'
-
 export async function getJSON(url) {
     const response = await fetch(url)
 
