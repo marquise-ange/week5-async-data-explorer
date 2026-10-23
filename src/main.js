@@ -65,7 +65,7 @@ function createProductCard({
   return card
 }
 
-// Render the application based on the current state.
+// Render the interface from the current state.
 function render() {
   app.replaceChildren()
 
@@ -180,7 +180,7 @@ function render() {
   allOption.textContent = 'All categories'
   categorySelect.append(allOption)
 
-  // Build unique categories from the fetched products.
+  // Create unique categories from the loaded API data.
   const categories = [
     ...new Set(
       state.items
@@ -196,16 +196,16 @@ function render() {
     categorySelect.append(option)
   })
 
-  // Keep the selected category after rendering.
-  const categoryExists = categories.includes(state.filter)
-  categorySelect.value = categoryExists ? state.filter : 'all'
+  categorySelect.value = categories.includes(state.filter)
+    ? state.filter
+    : 'all'
 
   categorySelect.addEventListener('change', (event) => {
     state.filter = event.target.value
     render()
   })
 
-  // Apply search and category filtering together.
+  // Filter products using both search and category.
   const query = state.query.trim().toLowerCase()
 
   const visibleItems = state.items.filter((product) => {
@@ -221,13 +221,64 @@ function render() {
     return matchesSearch && matchesCategory
   })
 
+  // Sorting label
+  const sortLabel = document.createElement('label')
+  sortLabel.htmlFor = 'sort-products'
+  sortLabel.className = 'mt-5 block font-medium text-gray-700'
+  sortLabel.textContent = 'Sort products'
+
+  // Sorting dropdown
+  const sortSelect = document.createElement('select')
+  sortSelect.id = 'sort-products'
+  sortSelect.setAttribute('aria-label', 'Sort products')
+  sortSelect.className =
+    'mt-2 block w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3'
+
+  const sortOptions = [
+    { value: 'default', label: 'Default order' },
+    { value: 'price-asc', label: 'Price: Low to High' },
+    { value: 'price-desc', label: 'Price: High to Low' },
+    { value: 'name-asc', label: 'Name: A to Z' },
+  ]
+
+  sortOptions.forEach(({ value, label }) => {
+    const option = document.createElement('option')
+    option.value = value
+    option.textContent = label
+    sortSelect.append(option)
+  })
+
+  sortSelect.value = state.sort
+
+  sortSelect.addEventListener('change', (event) => {
+    state.sort = event.target.value
+    render()
+  })
+
+  // Sort a copy of the filtered products.
+  let sortedItems = visibleItems
+
+  if (state.sort === 'price-asc') {
+    sortedItems = visibleItems.toSorted(
+      (a, b) => a.price - b.price
+    )
+  } else if (state.sort === 'price-desc') {
+    sortedItems = visibleItems.toSorted(
+      (a, b) => b.price - a.price
+    )
+  } else if (state.sort === 'name-asc') {
+    sortedItems = visibleItems.toSorted(
+      (a, b) => a.title.localeCompare(b.title)
+    )
+  }
+
   // Results count
   const status = document.createElement('p')
   status.className = 'mt-4 text-sm text-gray-600'
   status.setAttribute('role', 'status')
   status.setAttribute('aria-live', 'polite')
   status.textContent =
-    `Showing ${visibleItems.length} of ${state.items.length} products`
+    `Showing ${sortedItems.length} of ${state.items.length} products`
 
   // Product grid
   const grid = document.createElement('section')
@@ -235,24 +286,29 @@ function render() {
     'mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
   grid.setAttribute('aria-label', 'Product catalogue')
 
-  // Empty state or product cards
-  if (visibleItems.length === 0) {
+  // Empty state or sorted product cards
+  if (sortedItems.length === 0) {
     const emptyMessage = document.createElement('p')
     emptyMessage.className =
       'col-span-full rounded-xl bg-white p-6 text-gray-600 shadow-sm'
 
-    emptyMessage.textContent =
-      state.query.trim() && state.filter !== 'all'
-        ? 'No products match your search and selected category.'
-        : state.query.trim()
-          ? 'No products found. Try another search.'
-          : state.filter !== 'all'
-            ? 'No products found in this category.'
-            : 'No products are available right now.'
+    if (state.query.trim() && state.filter !== 'all') {
+      emptyMessage.textContent =
+        'No products match your search and selected category.'
+    } else if (state.query.trim()) {
+      emptyMessage.textContent =
+        'No products found. Try another search.'
+    } else if (state.filter !== 'all') {
+      emptyMessage.textContent =
+        'No products found in this category.'
+    } else {
+      emptyMessage.textContent =
+        'No products are available right now.'
+    }
 
     grid.append(emptyMessage)
   } else {
-    const cards = visibleItems.map(({
+    const cards = sortedItems.map(({
       id,
       title,
       price,
@@ -280,6 +336,8 @@ function render() {
     searchInput,
     categoryLabel,
     categorySelect,
+    sortLabel,
+    sortSelect,
     status,
     grid
   )
