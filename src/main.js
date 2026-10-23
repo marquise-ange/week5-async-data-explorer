@@ -13,6 +13,7 @@ const state = {
 
 const app = document.querySelector('#app')
 
+// Create one product card safely using DOM elements.
 function createProductCard({
   id,
   title,
@@ -26,10 +27,15 @@ function createProductCard({
     'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200'
 
   const image = document.createElement('img')
-  image.src = thumbnail ?? ''
   image.alt = title ?? 'Product image'
   image.loading = 'lazy'
   image.className = 'h-48 w-full bg-gray-100 object-contain p-4'
+
+  if (thumbnail) {
+    image.src = thumbnail
+  } else {
+    image.alt = `${title ?? 'Product'} image unavailable`
+  }
 
   const content = document.createElement('div')
   content.className = 'p-4'
@@ -61,53 +67,65 @@ function createProductCard({
   return card
 }
 
+// Display the current application state.
 function render() {
   app.replaceChildren()
 
+  // Loading state
   if (state.status === 'loading') {
-    app.innerHTML = `
-      <main class="min-h-screen bg-stone-100 p-8">
-        <h1 class="text-3xl font-bold text-green-700">Data Explorer</h1>
-        <p role="status" aria-live="polite" class="mt-4 text-gray-600">
-          Loading products, please wait...
-        </p>
-        <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          ${Array.from({ length: 8 }, () =>
-      '<div class="h-64 animate-pulse rounded-2xl bg-gray-200"></div>'
+    const loadingPage = document.createElement('main')
+    loadingPage.className = 'min-h-screen bg-stone-100 p-8'
+
+    loadingPage.innerHTML = `
+      <h1 class="text-3xl font-bold text-green-700">Data Explorer</h1>
+      <p role="status" aria-live="polite" class="mt-4 text-gray-600">
+        Loading products, please wait...
+      </p>
+      <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        ${Array.from(
+      { length: 8 },
+      () =>
+        '<div class="h-64 animate-pulse rounded-2xl bg-gray-200"></div>'
     ).join('')}
-        </div>
-      </main>
+      </div>
     `
+
+    app.append(loadingPage)
     return
   }
 
+  // Error state
   if (state.status === 'error') {
-    app.innerHTML = `
-      <main class="min-h-screen bg-stone-100 p-8">
-        <h1 class="text-3xl font-bold text-green-700">Data Explorer</h1>
-        <section class="mt-8 max-w-lg rounded-xl bg-white p-6 shadow">
-          <h2 class="text-xl font-semibold text-red-600">
-            Unable to load products
-          </h2>
-          <p id="error-message" role="alert" class="mt-3 text-gray-600"></p>
-          <button id="retry-button" type="button"
-            class="mt-5 rounded-lg bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800">
-            Retry
-          </button>
-        </section>
-      </main>
+    const errorPage = document.createElement('main')
+    errorPage.className = 'min-h-screen bg-stone-100 p-8'
+
+    errorPage.innerHTML = `
+      <h1 class="text-3xl font-bold text-green-700">Data Explorer</h1>
+      <section class="mt-8 max-w-lg rounded-xl bg-white p-6 shadow">
+        <h2 class="text-xl font-semibold text-red-600">
+          Unable to load products
+        </h2>
+        <p id="error-message" role="alert" class="mt-3 text-gray-600"></p>
+        <button id="retry-button" type="button"
+          class="mt-5 rounded-lg bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800">
+          Retry
+        </button>
+      </section>
     `
 
-    document.querySelector('#error-message').textContent = state.error
+    errorPage.querySelector('#error-message').textContent =
+      state.error ?? 'Please check your connection and try again.'
 
-    document.querySelector('#retry-button').addEventListener(
+    errorPage.querySelector('#retry-button').addEventListener(
       'click',
       loadProducts
     )
 
+    app.append(errorPage)
     return
   }
 
+  // Main page
   const page = document.createElement('main')
   page.className = 'min-h-screen bg-stone-100 p-6 sm:p-8'
 
@@ -119,40 +137,85 @@ function render() {
   intro.className = 'mt-2 text-gray-600'
   intro.textContent = 'Explore our product collection.'
 
+  // Search input
+  const searchLabel = document.createElement('label')
+  searchLabel.htmlFor = 'product-search'
+  searchLabel.className = 'mt-5 block font-medium text-gray-700'
+  searchLabel.textContent = 'Search products'
+
+  const searchInput = document.createElement('input')
+  searchInput.type = 'search'
+  searchInput.id = 'product-search'
+  searchInput.placeholder = 'Search by product name or description...'
+  searchInput.setAttribute('aria-label', 'Search by product name or description')
+  searchInput.value = state.query
+  searchInput.className =
+    'mt-2 w-full max-w-lg rounded-xl border border-gray-300 bg-white px-4 py-3 outline-none focus:border-green-700 focus:ring-2 focus:ring-green-200'
+
+  searchInput.addEventListener('input', (event) => {
+    state.query = event.target.value
+    render()
+  })
+
+  // Search products by title or description.
+  const query = state.query.trim().toLowerCase()
+
+  const visibleItems = state.items.filter((product) => {
+    const title = (product.title ?? '').toLowerCase()
+    const description = (product.description ?? '').toLowerCase()
+
+    return title.includes(query) || description.includes(query)
+  })
+
   const status = document.createElement('p')
   status.className = 'mt-4 text-sm text-gray-600'
   status.setAttribute('role', 'status')
   status.setAttribute('aria-live', 'polite')
-  status.textContent = `Products loaded: ${state.items.length}`
+  status.textContent = `Showing ${visibleItems.length} of ${state.items.length} products`
 
+  // Product grid
   const grid = document.createElement('section')
   grid.className =
     'mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
   grid.setAttribute('aria-label', 'Product catalogue')
 
-  const cards = state.items.map(({
-    id,
-    title,
-    price,
-    category,
-    thumbnail,
-    description,
-  }) =>
-    createProductCard({
+  // Empty state or product cards
+  if (visibleItems.length === 0) {
+    const emptyMessage = document.createElement('p')
+    emptyMessage.className =
+      'col-span-full rounded-xl bg-white p-6 text-gray-600 shadow-sm'
+    emptyMessage.textContent = state.query.trim()
+      ? 'No products found. Try another search.'
+      : 'No products are available right now.'
+
+    grid.append(emptyMessage)
+  } else {
+    const cards = visibleItems.map(({
       id,
       title,
       price,
       category,
       thumbnail,
       description,
-    })
-  )
+    }) =>
+      createProductCard({
+        id,
+        title,
+        price,
+        category,
+        thumbnail,
+        description,
+      })
+    )
 
-  grid.append(...cards)
-  page.append(heading, intro, status, grid)
+    grid.append(...cards)
+  }
+
+  page.append(heading, intro, searchLabel, searchInput, status, grid)
   app.append(page)
 }
 
+// Fetch products from the API.
 async function loadProducts() {
   state.status = 'loading'
   state.error = null
@@ -160,6 +223,7 @@ async function loadProducts() {
 
   try {
     const { products } = await getProducts()
+
     state.items = products
     state.status = 'success'
   } catch (error) {
@@ -170,4 +234,5 @@ async function loadProducts() {
   render()
 }
 
+// Start the application.
 loadProducts()
