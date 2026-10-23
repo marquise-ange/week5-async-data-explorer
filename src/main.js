@@ -14,8 +14,6 @@ const state = {
 const app = document.querySelector('#app')
 
 const colors = {
-  forest: 'text-[#244B3B]',
-  muted: 'text-[#718078]',
   field:
     'w-full rounded-xl border border-[#dfe4da] bg-white px-4 py-3 text-sm text-[#24382E] transition focus:border-[#789B80] focus:outline-none focus:ring-2 focus:ring-[#DCE9D8]',
   button:
@@ -34,10 +32,7 @@ function createElement(tag, className = '', text = '') {
 }
 
 function createBrand() {
-  const brand = createElement(
-    'div',
-    'flex items-center gap-3'
-  )
+  const brand = createElement('div', 'flex items-center gap-3')
 
   const mark = createElement(
     'div',
@@ -46,11 +41,13 @@ function createBrand() {
   )
 
   const words = createElement('div')
+
   const name = createElement(
     'p',
     'font-extrabold tracking-tight text-[#244B3B]',
     'Product Explorer'
   )
+
   const tagline = createElement(
     'p',
     'mt-0.5 text-xs text-[#718078]',
@@ -69,15 +66,14 @@ function createHeader() {
     'flex items-center justify-between gap-4 border-b border-[#e6e9e1] py-5'
   )
 
-  const brand = createBrand()
-
   const label = createElement(
     'span',
     'hidden rounded-full border border-[#dce9d8] bg-white px-4 py-2 text-xs font-semibold text-[#244B3B] sm:inline-block',
     'YOUR PRODUCT GUIDE'
   )
 
-  header.append(brand, label)
+  header.append(createBrand(), label)
+
   return header
 }
 
@@ -118,6 +114,7 @@ function createHero() {
   )
 
   hero.append(content, decoration)
+
   return hero
 }
 
@@ -146,34 +143,50 @@ function createStatCard(label, value, note) {
   )
 
   card.append(title, number, description)
+
   return card
 }
 
 function createStats() {
   const stats = createElement(
     'section',
-    'mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4'
+    'mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4'
   )
 
   const total = state.items.length
 
+  // Calculate the total of all valid numeric prices.
   const priceTotal = state.items.reduce(
     (sum, product) =>
       sum + (
-        typeof product.price === 'number'
+        typeof product.price === 'number' &&
+          Number.isFinite(product.price)
           ? product.price
           : 0
       ),
     0
   )
 
-  const averagePrice = total > 0
-    ? priceTotal / total
+  // Count products that have valid numeric prices.
+  const pricedProducts = state.items.reduce(
+    (count, product) =>
+      count + (
+        typeof product.price === 'number' &&
+          Number.isFinite(product.price)
+          ? 1
+          : 0
+      ),
+    0
+  )
+
+  // Divide by priced products, not all products.
+  const averagePrice = pricedProducts > 0
+    ? priceTotal / pricedProducts
     : 0
 
   const categories = new Set(
     state.items
-      .map((product) => product.category)
+      .map(({ category }) => category)
       .filter(Boolean)
   )
 
@@ -186,12 +199,17 @@ function createStats() {
     createStatCard(
       'Average price',
       `$${averagePrice.toFixed(2)}`,
-      'Average listed product price'
+      'Average price of products with valid prices'
     ),
     createStatCard(
       'Categories',
       categories.size.toLocaleString(),
       'Unique product categories'
+    ),
+    createStatCard(
+      'Products with prices',
+      pricedProducts.toLocaleString(),
+      'Products with a valid numeric price'
     )
   )
 
@@ -228,15 +246,21 @@ function createProductCard({
 
   if (thumbnail) {
     image.src = thumbnail
+  } else {
+    image.hidden = true
   }
 
-  image.addEventListener('error', () => {
-    image.hidden = true
-    imageWrap.setAttribute(
-      'aria-label',
-      'Product image unavailable'
-    )
-  }, { once: true })
+  image.addEventListener(
+    'error',
+    () => {
+      image.hidden = true
+      imageWrap.setAttribute(
+        'aria-label',
+        'Product image unavailable'
+      )
+    },
+    { once: true }
+  )
 
   imageWrap.append(image)
 
@@ -332,6 +356,7 @@ function createStatePanel(title, message, icon = '✦') {
   )
 
   panel.append(symbol, heading, description)
+
   return panel
 }
 
@@ -374,22 +399,10 @@ function createLoadingPage() {
     )
 
     skeletonContent.append(
-      createElement(
-        'div',
-        'h-4 w-1/3 rounded-lg bg-[#e8eae3]'
-      ),
-      createElement(
-        'div',
-        'h-5 w-4/5 rounded-lg bg-[#e8eae3]'
-      ),
-      createElement(
-        'div',
-        'h-4 w-full rounded-lg bg-[#e8eae3]'
-      ),
-      createElement(
-        'div',
-        'h-8 w-1/2 rounded-lg bg-[#e8eae3]'
-      )
+      createElement('div', 'h-4 w-1/3 rounded-lg bg-[#e8eae3]'),
+      createElement('div', 'h-5 w-4/5 rounded-lg bg-[#e8eae3]'),
+      createElement('div', 'h-4 w-full rounded-lg bg-[#e8eae3]'),
+      createElement('div', 'h-8 w-1/2 rounded-lg bg-[#e8eae3]')
     )
 
     skeleton.append(skeletonImage, skeletonContent)
@@ -397,6 +410,7 @@ function createLoadingPage() {
   }
 
   page.append(loadingMessage, skeletonGrid)
+
   return page
 }
 
@@ -466,10 +480,7 @@ function render() {
     createStats()
   )
 
-  const catalogue = createElement(
-    'section',
-    'mt-12'
-  )
+  const catalogue = createElement('section', 'mt-12')
 
   const sectionHeading = createElement(
     'h2',
@@ -485,7 +496,6 @@ function render() {
 
   catalogue.append(sectionHeading, sectionDescription)
 
-  // Search, category and sorting controls.
   const toolbar = createElement(
     'div',
     'mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]'
@@ -497,14 +507,12 @@ function render() {
   )
 
   searchLabel.htmlFor = 'product-search'
+
   searchLabel.append(
     createElement('span', 'mb-2 block', 'Search products')
   )
 
-  const searchInput = createElement(
-    'input',
-    colors.field
-  )
+  const searchInput = createElement('input', colors.field)
 
   searchInput.type = 'search'
   searchInput.id = 'product-search'
@@ -544,10 +552,10 @@ function render() {
   const categories = [
     ...new Set(
       state.items
-        .map((product) => product.category)
+        .map(({ category }) => category)
         .filter(Boolean)
     ),
-  ].sort((a, b) => a.localeCompare(b))
+  ].toSorted((a, b) => a.localeCompare(b))
 
   const categoryLabel = createElement(
     'label',
@@ -555,16 +563,15 @@ function render() {
   )
 
   categoryLabel.htmlFor = 'category-filter'
+
   categoryLabel.append(
     createElement('span', 'mb-2 block', 'Category')
   )
 
-  const categorySelect = createElement(
-    'select',
-    colors.field
-  )
+  const categorySelect = createElement('select', colors.field)
 
   categorySelect.id = 'category-filter'
+
   categorySelect.setAttribute(
     'aria-label',
     'Filter products by category'
@@ -573,12 +580,15 @@ function render() {
   const allOption = document.createElement('option')
   allOption.value = 'all'
   allOption.textContent = 'All categories'
+
   categorySelect.append(allOption)
 
   categories.forEach((category) => {
     const option = document.createElement('option')
+
     option.value = category
     option.textContent = category
+
     categorySelect.append(option)
   })
 
@@ -599,16 +609,15 @@ function render() {
   )
 
   sortLabel.htmlFor = 'sort-products'
+
   sortLabel.append(
     createElement('span', 'mb-2 block', 'Sort by')
   )
 
-  const sortSelect = createElement(
-    'select',
-    colors.field
-  )
+  const sortSelect = createElement('select', colors.field)
 
   sortSelect.id = 'sort-products'
+
   sortSelect.setAttribute('aria-label', 'Sort products')
 
   const sortOptions = [
@@ -620,8 +629,10 @@ function render() {
 
   sortOptions.forEach(({ value, label }) => {
     const option = document.createElement('option')
+
     option.value = value
     option.textContent = label
+
     sortSelect.append(option)
   })
 
@@ -633,20 +644,17 @@ function render() {
   })
 
   sortLabel.append(sortSelect)
+
   toolbar.append(searchLabel, categoryLabel, sortLabel)
 
-  // Filter using both the search query and category.
   const query = state.query.trim().toLowerCase()
 
   const visibleItems = state.items.filter((product) => {
     const title = (product.title ?? '').toLowerCase()
-    const description = (
-      product.description ?? ''
-    ).toLowerCase()
+    const description = (product.description ?? '').toLowerCase()
 
     const matchesSearch =
-      title.includes(query) ||
-      description.includes(query)
+      title.includes(query) || description.includes(query)
 
     const matchesCategory =
       state.filter === 'all' ||
@@ -655,22 +663,20 @@ function render() {
     return matchesSearch && matchesCategory
   })
 
-  // Sort a copy of the filtered products.
   let sortedItems = visibleItems
 
   if (state.sort === 'price-asc') {
     sortedItems = visibleItems.toSorted(
-      (a, b) => a.price - b.price
+      (a, b) => (a.price ?? 0) - (b.price ?? 0)
     )
   } else if (state.sort === 'price-desc') {
     sortedItems = visibleItems.toSorted(
-      (a, b) => b.price - a.price
+      (a, b) => (b.price ?? 0) - (a.price ?? 0)
     )
   } else if (state.sort === 'name-asc') {
     sortedItems = visibleItems.toSorted(
-      (a, b) => (a.title ?? '').localeCompare(
-        b.title ?? ''
-      )
+      (a, b) =>
+        (a.title ?? '').localeCompare(b.title ?? '')
     )
   }
 
@@ -703,9 +709,7 @@ function render() {
   const activeFilters = createElement(
     'span',
     'rounded-full bg-[#e8eee2] px-3 py-1.5 text-xs font-semibold capitalize text-[#244B3B]',
-    state.filter === 'all'
-      ? 'All categories'
-      : state.filter
+    state.filter === 'all' ? 'All categories' : state.filter
   )
 
   resultsRow.append(results, activeFilters)
@@ -730,11 +734,7 @@ function render() {
     }
 
     grid.append(
-      createStatePanel(
-        'No products found',
-        message,
-        '⌕'
-      )
+      createStatePanel('No products found', message, '⌕')
     )
   } else {
     const cards = sortedItems.map((product) =>
@@ -744,11 +744,7 @@ function render() {
     grid.append(...cards)
   }
 
-  catalogue.append(
-    toolbar,
-    resultsRow,
-    grid
-  )
+  catalogue.append(toolbar, resultsRow, grid)
 
   const footer = createElement(
     'footer',
@@ -772,10 +768,10 @@ async function loadProducts() {
     state.status = 'success'
   } catch (error) {
     state.status = 'error'
-    state.error =
-      error instanceof Error
-        ? error.message
-        : 'An unexpected error occurred.'
+
+    state.error = error instanceof Error
+      ? error.message
+      : 'An unexpected error occurred.'
   }
 
   render()
